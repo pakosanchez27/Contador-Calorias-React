@@ -1,40 +1,63 @@
 
-import { useState, ChangeEvent, SubmitEvent } from "react"
+import { useState, ChangeEvent, SubmitEvent, type Dispatch, useEffect } from "react"
+import { v4 as uuidv4 } from "uuid"
 import type { Activity } from "../types"
 import { categories } from "../data/categories"
+import type { ActivityActions, ActivityState } from "../reducers/activity-reducer"
 
-export default function From() {
 
-    const [activity, setActivity] = useState<Activity>({
-        category: 1,
-        name: '',
-        calories: 0
+type FormProps = {
+    dispatch: Dispatch<ActivityActions>,
+    state: ActivityState
+}
 
-    })
+const initialState : Activity = {
+    id: uuidv4(),
+    category: 1,
+    name: '',
+    calories: 0
+}
+
+export default function From({ dispatch, state}: FormProps) {
+
+    const [activity, setActivity] = useState<Activity>(initialState)
+
+
+    useEffect(() => {
+        if(state.activeId){
+            const selectActivity = state.activities.filter(stateActivity => stateActivity.id === state.activeId)[0];
+            setActivity(selectActivity)
+        }
+    },[state.activeId])
 
     const isValidActivity = () => {
-        const {name, calories} = activity
+        const { name, calories } = activity
         return name.trim() !== '' && calories > 0
     }
-    
+
     const handleChange = (e: ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>) => {
 
         const isNumberField = ['category', 'calories'].includes(e.target.id)
 
-       setActivity({
-        ...activity,
-        [e.target.id]: isNumberField ? +e.target.value : e.target.value
-       })
-        
+        setActivity({
+            ...activity,
+            [e.target.id]: isNumberField ? +e.target.value : e.target.value
+        })
+
     }
 
-    
-    const handleSubmit = ( e: SubmitEvent<HTMLFormElement>) => {
+
+    const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
-        console.log('Suibiendo');
-        
+
+        dispatch({ type: 'save-activity', payload: { newActivity: activity } })
+
+        setActivity({
+            ...initialState,
+            id: uuidv4()
+        })
     }
-    
+
     return (
         <form
             className="space-y-5 bg-white shadow p-10 rounded-lg"
